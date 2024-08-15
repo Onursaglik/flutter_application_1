@@ -106,6 +106,52 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void _openSizeDialog(int index) {
+    TextEditingController heightController = TextEditingController();
+    TextEditingController widthController = TextEditingController();
+
+    heightController.text = _containerSizes[index].height.toString();
+    widthController.text = _containerSizes[index].width.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Boyutları Düzenle'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: heightController,
+                decoration: const InputDecoration(labelText: 'Height'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: widthController,
+                decoration: const InputDecoration(labelText: 'Width'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              child: const Text('Tamam'),
+              onPressed: () {
+                setState(() {
+                  _containerSizes[index] = Size(
+                    double.parse(widthController.text),
+                    double.parse(heightController.text),
+                  );
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,6 +171,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     _offsets[index].dy + details.delta.dy,
                   );
                 });
+              },
+              onTap: () {
+                _openSizeDialog(index);
               },
               child: SizedBox(
                 width: _containerSizes[index].width,
