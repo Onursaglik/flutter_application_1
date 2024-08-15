@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -10,8 +11,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final List<Offset> _offsets = [];
   final List<Size> _containerSizes = [];
-  final List<String> _imagePaths =
-      []; // Eklenecek resimlerin yolunu tutan liste
+  final List<String> _imagePaths = [];
 
   @override
   void initState() {
@@ -20,11 +20,53 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _saveData() async {
-    // Burada kaydetme işlemi gerçekleştirilebilir (shared_preferences gibi)
+    final prefs = await SharedPreferences.getInstance();
+
+    // Save offsets
+    List<String> offsetsString =
+        _offsets.map((o) => '${o.dx},${o.dy}').toList();
+    await prefs.setStringList('offsets', offsetsString);
+
+    // Save sizes
+    List<String> sizesString =
+        _containerSizes.map((s) => '${s.width},${s.height}').toList();
+    await prefs.setStringList('sizes', sizesString);
+
+    // Save image paths
+    await prefs.setStringList('imagePaths', _imagePaths);
   }
 
   void _loadData() async {
-    // Burada veriler geri yüklenebilir (shared_preferences gibi)
+    final prefs = await SharedPreferences.getInstance();
+
+    // Load offsets
+    List<String>? offsetsString = prefs.getStringList('offsets');
+    if (offsetsString != null && offsetsString.isNotEmpty) {
+      _offsets.clear();
+      _offsets.addAll(offsetsString.map((s) {
+        final parts = s.split(',');
+        return Offset(double.parse(parts[0]), double.parse(parts[1]));
+      }).toList());
+    }
+
+    // Load sizes
+    List<String>? sizesString = prefs.getStringList('sizes');
+    if (sizesString != null && sizesString.isNotEmpty) {
+      _containerSizes.clear();
+      _containerSizes.addAll(sizesString.map((s) {
+        final parts = s.split(',');
+        return Size(double.parse(parts[0]), double.parse(parts[1]));
+      }).toList());
+    }
+
+    // Load image paths
+    List<String>? imagePaths = prefs.getStringList('imagePaths');
+    if (imagePaths != null && imagePaths.isNotEmpty) {
+      setState(() {
+        _imagePaths.clear();
+        _imagePaths.addAll(imagePaths);
+      });
+    }
   }
 
   void _openImageSelectionDialog() {
@@ -92,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         _imagePaths
                             .add(selectedImagePath!); // Seçilen resmi ekle
                       });
-                      _saveData();
+                      _saveData(); // Verileri kaydet
                       Navigator.of(dialogContext).pop();
                     }
                   },
@@ -143,6 +185,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     double.parse(heightController.text),
                   );
                 });
+                _saveData(); // Verileri kaydet
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Delete'),
+              onPressed: () {
+                setState(() {
+                  _offsets.removeAt(index);
+                  _containerSizes.removeAt(index);
+                  _imagePaths.removeAt(index);
+                });
+                _saveData(); // Verileri kaydet
                 Navigator.of(context).pop();
               },
             ),
@@ -171,6 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     _offsets[index].dy + details.delta.dy,
                   );
                 });
+                _saveData(); // Her hareketten sonra veriyi kaydet
               },
               onTap: () {
                 _openSizeDialog(index);
@@ -187,9 +243,21 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }).toList(),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openImageSelectionDialog,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: _openImageSelectionDialog,
+            child: const Icon(Icons.add),
+            tooltip: 'Resim Ekle',
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: _saveData,
+            child: const Icon(Icons.save),
+            tooltip: 'Kaydet',
+          ),
+        ],
       ),
     );
   }
