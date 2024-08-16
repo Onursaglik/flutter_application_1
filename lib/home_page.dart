@@ -236,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 height: _containerSizes[index].height,
                 child: Image.asset(
                   imagePath,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.fill,
                 ),
               ),
             ),
